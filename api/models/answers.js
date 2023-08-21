@@ -6,6 +6,10 @@ const answerSchema = new mongoose.Schema({
     ref: 'Question',
     required: true
   },
+  id:{
+    type:Number,
+    required:true
+  },
   answerText: {
     type: String,
     required: true

@@ -11,6 +11,7 @@ const app  =express()
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+
 const uri = "mongodb+srv://khadayatesahil:sahil123@cluster0.v5xgni0.mongodb.net/shipmnt?retryWrites=true&w=majority";
 async function connect(){
     try {
@@ -26,7 +27,7 @@ async function connect(){
 const db = connect();
 
 var counter=0;
-
+var ansid=0;
 
 
 app.post("/api/users",async(req,res)=>{
@@ -62,18 +63,51 @@ app.get("/api/questions", async (req, res) => {
   });
 
 
-app.post("api/questions/:id/rating",async(req,res)=>{
-    const id = req.params.id;
-    const rating = req.body.rating;
-    const question = await Question.findOne({questionId:id});
-    if(rating==="Up"){
-        question.updateOne({upvotes:upvotes+1})
+app.post("/api/questions/rating/:id",async(req,res)=>{
+    try {
+        const id = req.params.id;
+        console.log(id);
+        const rating = req.body.rating;
+        const question = await Question.findOne({questionId:id});
+        const answer = await Answer.findOne({})
+        if(!question){
+            res.status(404).json({"message":"Question doesnt exist"});
+        }
+    if (rating === "Up") {
+        question.upvotes += 1;
+      } else {
+        question.downvotes += 1;
+      }
+  
+      await question.save();
+        res.status(201).json({message:"Successfully changed rating"}) ;
+    } catch (error) {
+     console.error(error);   
     }
-    else{
-        question.updateOne({downvotes:downvotes+1})
-    }
+    
 });
 
+app.post("/api/questions/comment/:id",async(req,res)=>{
+
+    try {
+        const id = req.params.id;
+        const comment = req.body.comment;
+        const question = await Question.findOne({questionId:id});
+        if(!question){
+            res.status(404).json({"message":"Question doesnt exist"});
+        } 
+        if(!comment){
+            res.status(404).json({"message":"Please provide a comment to post"});
+        }
+        question.comments.push(comment);
+        await question.save();
+        res.status(201).json({"message":"Successfully posted comment"});
+    } catch (error) {
+        console.error(error);
+    }
+    
+    
+})
 app.post("/api/questions/create", async (req, res) => {
     try {
       const question = await Question.create({
@@ -81,18 +115,42 @@ app.post("/api/questions/create", async (req, res) => {
         questionText: req.body.question,
       });
       const answer = await Answer.create({
-        question: question._id, 
+        question: question._id,
+        id:ansid, 
         answerText: req.body.answer, 
       });
       console.log(question);
       console.log(answer);
       counter++;
+      ansid++;
       res.status(201).json({ message: 'Question created successfully' });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'An error occurred while creating the question' });
     }
   });
+ 
+  app.patch("/api/questions/update/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const updatedQuestionText = req.body.questionText;
+  
+      const question = await Question.findOne({ questionId: id });
+  
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+  
+      question.questionText = updatedQuestionText;
+      await question.save();
+  
+      res.status(200).json({ message: "Question updated successfully" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "An error occurred while updating the question" });
+    }
+  });
+  
 
 
 
