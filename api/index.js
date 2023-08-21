@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const cors=require('cors');
 const User = require("./models/user");
 const Question = require("./models/questions");
-
+const Answer  = require("./models/answers");
 const app  =express()
 
 //app.use(express.static(path.join(__dirname, 'public')));
@@ -46,19 +46,32 @@ app.post("/api/users",async(req,res)=>{
 
     // var name = req.body.name;
     // var name = req.body.name
-})
+});
+
+
 
 app.get("/api/questions", async (req, res) => {
     try {
       const questions = await Question.find({});
+
       res.json(questions);
+    
     } catch (error) {
       res.status(500).json({ error: 'An error occurred while fetching questions.' });
     }
   });
 
-app.post("api/questions/:id/rating",(req,res)=>{
 
+app.post("api/questions/:id/rating",async(req,res)=>{
+    const id = req.params.id;
+    const rating = req.body.rating;
+    const question = await Question.findOne({questionId:id});
+    if(rating==="Up"){
+        question.updateOne({upvotes:upvotes+1})
+    }
+    else{
+        question.updateOne({downvotes:downvotes+1})
+    }
 });
 
 app.post("/api/questions/create", async (req, res) => {
@@ -67,7 +80,12 @@ app.post("/api/questions/create", async (req, res) => {
         questionId:counter,
         questionText: req.body.question,
       });
+      const answer = await Answer.create({
+        question: question._id, 
+        answerText: req.body.answer, 
+      });
       console.log(question);
+      console.log(answer);
       counter++;
       res.status(201).json({ message: 'Question created successfully' });
     } catch (error) {
