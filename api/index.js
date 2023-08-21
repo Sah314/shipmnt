@@ -30,6 +30,10 @@ var counter=0;
 var ansid=0;
 
 
+app.get("/", (req, res) => {
+    res.redirect("/api/users");
+  });
+  
 app.post("/api/users",async(req,res)=>{
     
     try {
@@ -39,14 +43,11 @@ app.post("/api/users",async(req,res)=>{
             email:req.body.email,
           });
           console.log(user);
-          res.end();
+          res.json("User page");
     } catch (error) {
         console.error(error);
     }
-   
 
-    // var name = req.body.name;
-    // var name = req.body.name
 });
 
 
@@ -63,9 +64,9 @@ app.get("/api/questions", async (req, res) => {
   });
 
 
-app.post("/api/questions/rating/:id",async(req,res)=>{
+app.post("/api/questions/rating/:qid",async(req,res)=>{
     try {
-        const id = req.params.id;
+        const id = req.params.qid;
         console.log(id);
         const rating = req.body.rating;
         const question = await Question.findOne({questionId:id});
@@ -110,10 +111,19 @@ app.post("/api/questions/comment/:id",async(req,res)=>{
 })
 app.post("/api/questions/create", async (req, res) => {
     try {
+      const latQues = await Question.findOne({}, { questionId: 1 })
+      .sort({ questionId: -1 })
+      .limit(1);
+
+    let counter = 1; 
+    if (latQues) {
+      counter = latQues.questionId + 1;
+    }
       const question = await Question.create({
         questionId:counter,
         questionText: req.body.question,
       });
+      question.questionId=counter;
       const answer = await Answer.create({
         question: question._id,
         id:ansid, 
@@ -151,8 +161,5 @@ app.post("/api/questions/create", async (req, res) => {
     }
   });
   
-
-
-
 
 app.listen(3000,()=>{console.log("Server started at 3000")})
